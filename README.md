@@ -1,0 +1,2 @@
+# JavascriptDesignModel
+有关javascript的设计模式的读书笔记
