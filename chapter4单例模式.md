@@ -106,3 +106,74 @@
 			console.log('a',a);
 			console.log('b',b);
 			console.log(a === b);
+			
+			
+			
+单例模式的实战		
+三种写法的比较	
+	
+- 方案1 创造一个div 	
+
+```
+
+				
+			var loginLayer = (function(){
+			var div = document.createElement('div');
+			div.innerHTML = '我是登录';
+			div.style.display = 'none';
+			document.body.appendChild(div);
+			return div;
+		})();
+
+		document.getElementById('loginBtn').onclick = function(){
+			loginLayer.style.display = 'block';
+		}
+
+```
+
+- 方案2 在需要的时候创造一个div 但这个div创造的时候是独一无二的
+		
+
+```
+	var createLoginLayer = function(){
+			var div = document.createElement('div');
+			div.innerHTML = '我是登录';
+			div.style.display = 'none';
+			document.body.appendChild(div);
+			return div;
+		};
+
+		document.getElementById('loginBtn').onclick = function(){
+			var loginLayer = createLoginLayer();
+			var loginLayer2 = createLoginLayer();
+			//输出false 都在实例化一个不同的dom对象
+			console.log(loginLayer === loginLayer2);
+			loginLayer.style.display = 'block';
+		}
+
+```
+
+- 方案3：在需要的时候创造一个div 但这个div是之前就创建的	
+
+```
+			var createLoginLayer = (function(){
+			var div;
+			return function(){
+				if(!div){
+					div = document.createElement('div');
+					div.innerHTML = '我是登录';
+					div.style.display = 'none';
+					document.body.appendChild(div);
+				}
+				return div;
+			}
+		})();
+
+		document.getElementById('loginBtn').onclick = function(){
+			var loginLayer = createLoginLayer();
+			var loginLayer2 = createLoginLayer();
+			//输出true 创建了一个一模一样的div
+			console.log(loginLayer === loginLayer2);			loginLayer.style.display = 'block';
+		}
+
+```
