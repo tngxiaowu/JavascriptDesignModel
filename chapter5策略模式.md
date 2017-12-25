@@ -147,100 +147,93 @@
 ***********	
 			
 ### 策略模式的实战	
-场景：让小球进行运动（使用策略模式写一个小球运动的动画类）		
+场景1：让小球进行运动（使用策略模式写一个小球运动的动画类）		
 
-- 方案1 创造一个div(窗口)
-
-```
-		var loginLayer = (function(){
-			var div = document.createElement('div');
-			div.innerHTML = '我是登录';
-			div.style.display = 'none';
-			document.body.appendChild(div);
-			return div;
-		})();
-
-		document.getElementById('loginBtn').onclick = function(){
-			loginLayer.style.display = 'block';
-		}
-```
-这个div在页面初始化的时候就已经存在，如果用户没有点击，那么岂不是会浪费性能。
-
-
-- 方案2 在需要的时候创造一个div 但这个div创造的时候是独一无二的
-		
+场景2：表单校验		
+写法1：
 
 ```
-		var createLoginLayer = function(){
-			var div = document.createElement('div');
-			div.innerHTML = '我是登录';
-			div.style.display = 'none';
-			document.body.appendChild(div);
-			return div;
-		};
-
-		document.getElementById('loginBtn').onclick = function(){
-			//在点击的时候就new一个新的对象
-			var loginLayer = createLoginLayer();
-			var loginLayer2 = createLoginLayer();
-			//输出false 都在实例化一个不同的dom对象
-			console.log(loginLayer === loginLayer2);
-			loginLayer.style.display = 'block';
-		}
-```
-
-- 方案3：在需要的时候创造一个div 但这个div是之前就创建的	
-
-```
-		var createLoginLayer = (function(){
-			var div;
-			return function(){
-				// 判断对象是否唯一
-				if(!div){
-					// 创建对象
-					div = document.createElement('div');
-					div.innerHTML = '我是登录';
-					div.style.display = 'none';
-					document.body.appendChild(div);
-				}
-				return div;
+		var registerForm = document.getElementById('registerForm');
+		registerForm.onsubmit = function(){
+			// 验证姓名不为空
+			if(registerForm.userName.value ){
+				console.log('用户名不为空')
+				return false
 			}
-		})();
+			// 验证密码长度
+			if(registerForm.password.value.length < 6 ){
+				console.log('密码长度小于6位')
+				return false
+			}
 
-		document.getElementById('loginBtn').onclick = function(){
-			var loginLayer = createLoginLayer();
-			var loginLayer2 = createLoginLayer();
-			//输出true 创建了一个一模一样的div
-			console.log(loginLayer === loginLayer2);			loginLayer.style.display = 'block';
+			// 验证手机号为符合格式
+			if( !/ /.test(registerForm.telPhone.value)  ){
+				console.log('手机号格式不正确')
+				return false
+			}
 		}
-```
-勉勉强强达到了需求，但是能否给一个结构更清晰的代码么？还是违反了单一职责的原则。所以接下来我们还是需要优化！
-
-- 方案4
 
 ```
-		//创造div的方法
-		var creatDiv = function(){
-			var div = document.createElement('div');
-			div.innerHTML = '我是登录';
-			div.style.display = 'none';
-			document.body.appendChild(div);
-			return div;
-		};
+缺点非常明显，复用性差，维护不宜。		
 
-		//单例模式的判断逻辑
-		var getSingle = function(fn){
-			//单例模式的核心判断逻辑
-			var result;
-			return result || (result = fn.apply(this,arguments));
-		};
+写法2：使用策略模式		
 
-		// 创造一个单一的元素类
-		var creatSingleDiv = getSingle(creatDiv);
-			document.getElementById('btn').onclick = function(){
-			var longinDom = new creatSingleDiv();
-			longinDom.style.display = 'block';
+```
+	var stratgeies = {
+			'isEmptyValue' : function( val ,errorMsg ){
+				if( val === '' ){
+					return errorMsg;
+				}
+			},
+			'minLenth' : function( val , length ,errorMsg ){
+				if( val.length < length ){
+					return errorMsg;
+				}
+			},
+			'isMolie' : function( val, errorMsg ){
+				if(!reg.test(val)){
+					return errorMsg;
+				}
+			}
+		} 
+
+		//计算校验规则的方法
+		var validataFunc = function(){
+			var validator = new Validator();
+			// 往类里面添加方法
+			validator.add(registerForm.userName.value, 'isEmptyValue' ,'用户名不为空')
+			validator.add(registerForm.password.value.length, 'minLenth:6' ,'密码长度不小于6')
+			validator.add(registerForm.telPhone.value, 'isMolie' ,'手机格式不正确')
+
+			var errorMsg = validator.start()
+			return errorMsg;
 		}
+
+		var Validator = function(){
+			this.cache = [];
+		}
+
+		Validator.prototype.add = function(dom,rule,errorMsg){
+			var ary = rule.split(':');
+			this.cache.push(function(){
+				var strategy = ary.shift();
+				ary.unshift( dom.value );
+				ary.push( errorMsg );
+				return stratgeies[ strategy ].apply(dom,ary);
+			})
+		}
+
+		Validator.prototype.start = function(){
+			for(var i = 0 , validatorFunc; validatorFunc = this.cache[ i++ ];){
+				var msg = validatorFunc();
+				if(msg){
+					return msg;
+				}
+			}
+		}
+
 ```
+
+非常优雅的写法，给大神跪了。
 
 
